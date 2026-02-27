@@ -1,97 +1,88 @@
-/*!
-    Title: Dev Portfolio Template
-    Version: 1.2.2
-    Last Change: 03/25/2020
-    Author: Ryan Fitzgerald
-    Repo: https://github.com/RyanFitzgerald/devportfolio-template
-    Issues: https://github.com/RyanFitzgerald/devportfolio-template/issues
+// ===== NAVBAR SCROLL =====
+const navbar = document.querySelector('.navbar');
+window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 50);
+    document.querySelector('.scroll-top')?.classList.toggle('visible', window.scrollY > 400);
+});
 
-    Description: This file contains all the scripts associated with the single-page
-    portfolio website.
-*/
+// ===== MOBILE MENU =====
+const toggle = document.querySelector('.nav-toggle');
+const navLinks = document.querySelector('.nav-links');
+const overlay = document.querySelector('.nav-mobile-overlay');
 
-(function($) {
+toggle?.addEventListener('click', () => {
+    navLinks.classList.toggle('active');
+    overlay.classList.toggle('active');
+});
+overlay?.addEventListener('click', () => {
+    navLinks.classList.remove('active');
+    overlay.classList.remove('active');
+});
+document.querySelectorAll('.nav-links a').forEach(a => {
+    a.addEventListener('click', () => {
+        navLinks.classList.remove('active');
+        overlay.classList.remove('active');
+    });
+});
 
-    // Remove no-js class
-    $('html').removeClass('no-js');
+// ===== SCROLL TO TOP =====
+document.querySelector('.scroll-top')?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
-    // Animate to section when nav is clicked
-    $('header a').click(function(e) {
-
-        // Treat as normal link if no-scroll class
-        if ($(this).hasClass('no-scroll')) return;
-
-        e.preventDefault();
-        var heading = $(this).attr('href');
-        var scrollDistance = $(heading).offset().top;
-
-        $('html, body').animate({
-            scrollTop: scrollDistance + 'px'
-        }, Math.abs(window.pageYOffset - $(heading).offset().top) / 1);
-
-        // Hide the menu once clicked if mobile
-        if ($('header').hasClass('active')) {
-            $('header, body').removeClass('active');
+// ===== INTERSECTION OBSERVER =====
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            revealObserver.unobserve(entry.target);
         }
     });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-    // Scroll to top
-    $('#to-top').click(function() {
-        $('html, body').animate({
-            scrollTop: 0
-        }, 500);
-    });
-
-    // Scroll to first element
-    $('#lead-down span').click(function() {
-        var scrollDistance = $('#lead').next().offset().top;
-        $('html, body').animate({
-            scrollTop: scrollDistance + 'px'
-        }, 500);
-    });
-
-    // Create timeline
-    $('#experience-timeline').each(function() {
-
-        $this = $(this); // Store reference to this
-        $userContent = $this.children('div'); // user content
-
-        // Create each timeline block
-        $userContent.each(function() {
-            $(this).addClass('vtimeline-content').wrap('<div class="vtimeline-point"><div class="vtimeline-block"></div></div>');
-        });
-
-        // Add icons to each block
-        $this.find('.vtimeline-point').each(function() {
-            $(this).prepend('<div class="vtimeline-icon"><i class="fa fa-map-marker"></i></div>');
-        });
-
-        // Add dates to the timeline if exists
-        $this.find('.vtimeline-content').each(function() {
-            var date = $(this).data('date');
-            if (date) { // Prepend if exists
-                $(this).parent().prepend('<span class="vtimeline-date">'+date+'</span>');
+// ===== PARTICLE CANVAS =====
+const canvas = document.getElementById('particles-canvas');
+if (canvas) {
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
+    resize();
+    window.addEventListener('resize', resize);
+    class Particle {
+        constructor() { this.reset(); }
+        reset() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 2 + 0.5;
+            this.speedX = (Math.random() - 0.5) * 0.3;
+            this.speedY = (Math.random() - 0.5) * 0.3;
+            this.opacity = Math.random() * 0.4 + 0.1;
+        }
+        update() {
+            this.x += this.speedX; this.y += this.speedY;
+            if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+        }
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(124,58,237,${this.opacity})`;
+            ctx.fill();
+        }
+    }
+    for (let i = 0; i < Math.min(80, Math.floor(canvas.width * canvas.height / 12000)); i++) particles.push(new Particle());
+    (function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        for (let i = 0; i < particles.length; i++)
+            for (let j = i + 1; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 120) {
+                    ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.strokeStyle = `rgba(124,58,237,${0.06 * (1 - dist / 120)})`; ctx.lineWidth = 0.5; ctx.stroke();
+                }
             }
-        });
-
-    });
-
-    // Open mobile menu
-    $('#mobile-menu-open').click(function() {
-        $('header, body').addClass('active');
-    });
-
-    // Close mobile menu
-    $('#mobile-menu-close').click(function() {
-        $('header, body').removeClass('active');
-    });
-
-    // Load additional projects
-    $('#view-more-projects').click(function(e){
-        e.preventDefault();
-        $(this).fadeOut(300, function() {
-            $('#more-projects').fadeIn(300);
-        });
-    });
-
-})(jQuery);
+        requestAnimationFrame(animate);
+    })();
+}
